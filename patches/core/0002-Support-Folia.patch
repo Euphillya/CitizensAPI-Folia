@@ -1,0 +1,370 @@
+From d07621210f89a927bcc094c8140c0b389c8ce2f8 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Thu, 9 May 2024 22:24:04 +0200
+Subject: [PATCH 2/2] Support Folia
+
+---
+ .../net/citizensnpcs/api/LocationLookup.java  |  16 +-
+ .../AsyncChunkSnapshotBlockSource.java        |  18 +-
+ .../api/astar/pathfinder/DoorExaminer.java    |   4 +-
+ .../citizensnpcs/api/gui/InventoryMenu.java   |   2 +-
+ .../net/citizensnpcs/api/npc/AbstractNPC.java |  10 +-
+ .../api/scheduler/FoliaRunnable.java          | 193 ++++++++++++++++++
+ 6 files changed, 229 insertions(+), 14 deletions(-)
+ create mode 100644 src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java
+
+diff --git a/src/main/java/net/citizensnpcs/api/LocationLookup.java b/src/main/java/net/citizensnpcs/api/LocationLookup.java
+index 748e275..0f253cc 100644
+--- a/src/main/java/net/citizensnpcs/api/LocationLookup.java
++++ b/src/main/java/net/citizensnpcs/api/LocationLookup.java
+@@ -30,13 +30,19 @@ import com.google.common.collect.Maps;
+ import ch.ethz.globis.phtree.PhTreeF;
+ import net.citizensnpcs.api.npc.NPC;
+ 
+-public class LocationLookup extends BukkitRunnable {
++public class LocationLookup extends net.citizensnpcs.api.scheduler.FoliaRunnable { // Euphyllia
+     private final Map<String, PerPlayerMetadata<?>> metadata = Maps.newHashMap();
+     private Future<Map<UUID, PhTreeF<NPC>>> npcFuture = null;
+     private Map<UUID, PhTreeF<NPC>> npcWorlds = Maps.newHashMap();
+     private Future<Map<UUID, PhTreeF<Player>>> playerFuture = null;
+     private Map<UUID, PhTreeF<Player>> worlds = Maps.newHashMap();
+ 
++    // Euphyllia Start
++    public LocationLookup() {
++        super(Bukkit.getGlobalRegionScheduler());
++    }
++    // Euphyllia end
++
+     public PerPlayerMetadata<?> getMetadata(String key) {
+         return metadata.get(key);
+     }
+@@ -98,23 +104,23 @@ public class LocationLookup extends BukkitRunnable {
+ 
+     @SuppressWarnings({ "unchecked", "rawtypes" })
+     public void onJoin(PlayerJoinEvent event) {
+-        Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(), () -> {
++        event.getPlayer().getScheduler().run(CitizensAPI.getPlugin(), (task) -> { // Euphyllia
+             updateWorld(event.getPlayer().getWorld());
+             for (PerPlayerMetadata meta : metadata.values()) {
+                 if (meta.onJoin != null) {
+                     meta.onJoin.accept(meta, event);
+                 }
+             }
+-        });
++        }, null); // Euphyllia
+     }
+ 
+     public void onQuit(PlayerQuitEvent event) {
+-        Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(), () -> {
++        event.getPlayer().getScheduler().run(CitizensAPI.getPlugin(), (task) -> { // Euphyllia
+             updateWorld(event.getPlayer().getWorld());
+             for (PerPlayerMetadata<?> meta : metadata.values()) {
+                 meta.sent.remove(event.getPlayer().getUniqueId());
+             }
+-        });
++        }, null); // Euphyllia
+     }
+ 
+     public void onWorldUnload(WorldUnloadEvent event) {
+diff --git a/src/main/java/net/citizensnpcs/api/astar/pathfinder/AsyncChunkSnapshotBlockSource.java b/src/main/java/net/citizensnpcs/api/astar/pathfinder/AsyncChunkSnapshotBlockSource.java
+index db5d08c..020267c 100644
+--- a/src/main/java/net/citizensnpcs/api/astar/pathfinder/AsyncChunkSnapshotBlockSource.java
++++ b/src/main/java/net/citizensnpcs/api/astar/pathfinder/AsyncChunkSnapshotBlockSource.java
+@@ -23,7 +23,20 @@ public class AsyncChunkSnapshotBlockSource extends CachingChunkBlockSource<Chunk
+     protected ChunkSnapshot getChunkObject(int x, int z) {
+         // TODO: pre-load multiple chunks on cache miss
+         Callable<ChunkSnapshot> call = () -> world.getChunkAt(x, z).getChunkSnapshot(false, false, false);
+-        try {
++        // Euphyllia start
++        java.util.concurrent.atomic.AtomicReference<ChunkSnapshot> reference = new java.util.concurrent.atomic.AtomicReference<>();
++        new net.citizensnpcs.api.scheduler.FoliaRunnable(world, x, z) {
++            @Override
++            public void run() {
++                try {
++                    reference.set(call.call());
++                } catch (Exception e) {
++                    throw new RuntimeException(e);
++                }
++            }
++        }.run(net.citizensnpcs.api.CitizensAPI.getPlugin());
++        return reference.get();
++        /*try {
+             if (!Bukkit.isPrimaryThread()) {
+                 return Bukkit.getScheduler().callSyncMethod(null, call).get();
+             } else
+@@ -31,7 +44,8 @@ public class AsyncChunkSnapshotBlockSource extends CachingChunkBlockSource<Chunk
+         } catch (Exception e) {
+             e.printStackTrace();
+         }
+-        return null;
++        return null;*/
++        // Euphyllia end
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/citizensnpcs/api/astar/pathfinder/DoorExaminer.java b/src/main/java/net/citizensnpcs/api/astar/pathfinder/DoorExaminer.java
+index 0fa3b53..b72ccc2 100644
+--- a/src/main/java/net/citizensnpcs/api/astar/pathfinder/DoorExaminer.java
++++ b/src/main/java/net/citizensnpcs/api/astar/pathfinder/DoorExaminer.java
+@@ -86,7 +86,7 @@ public class DoorExaminer implements BlockExaminer {
+         @Override
+         public void onReached(NPC npc, Block point) {
+             Location doorCentre = point.getLocation().add(0.5, 0, 0.5);
+-            new BukkitRunnable() {
++            new net.citizensnpcs.api.scheduler.FoliaRunnable(npc.getEntity(), null) { // Euphyllia
+                 @Override
+                 public void run() {
+                     if (!npc.getNavigator().isNavigating()) {
+@@ -101,7 +101,7 @@ public class DoorExaminer implements BlockExaminer {
+                         cancel();
+                     }
+                 }
+-            }.runTaskTimer(CitizensAPI.getPlugin(), 3, 1);
++            }.runAtFixedRate(CitizensAPI.getPlugin(), 3, 1); // Euphyllia
+         }
+ 
+         private void open(NPC npc, Block point) {
+diff --git a/src/main/java/net/citizensnpcs/api/gui/InventoryMenu.java b/src/main/java/net/citizensnpcs/api/gui/InventoryMenu.java
+index e464782..872deee 100644
+--- a/src/main/java/net/citizensnpcs/api/gui/InventoryMenu.java
++++ b/src/main/java/net/citizensnpcs/api/gui/InventoryMenu.java
+@@ -438,7 +438,7 @@ public class InventoryMenu implements Listener, Runnable {
+ 
+     private void runViewerModifier(Runnable run) {
+         if (delayViewerChanges) {
+-            Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(), run);
++            Bukkit.getGlobalRegionScheduler().execute(CitizensAPI.getPlugin(), run); // Euphyllia
+         } else {
+             run.run();
+         }
+diff --git a/src/main/java/net/citizensnpcs/api/npc/AbstractNPC.java b/src/main/java/net/citizensnpcs/api/npc/AbstractNPC.java
+index 589db9e..c619ca7 100644
+--- a/src/main/java/net/citizensnpcs/api/npc/AbstractNPC.java
++++ b/src/main/java/net/citizensnpcs/api/npc/AbstractNPC.java
+@@ -491,17 +491,19 @@ public abstract class AbstractNPC implements NPC {
+         final Entity passenger = entity.getPassenger();
+         entity.eject();
+         if (!location.getWorld().equals(entity.getWorld())) {
+-            Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(),
+-                    () -> entity.teleport(location, cause), delay++);
++            // Euphyllia start
++            entity.getScheduler().execute(CitizensAPI.getPlugin(),
++                    () -> entity.teleportAsync(location, cause), null, delay++);
++            // Euphyllia end
+         } else {
+-            entity.teleport(location, cause);
++            entity.teleportAsync(location, cause); // Euphyllia
+         }
+         if (passenger == null)
+             return;
+         teleport(passenger, location, delay++, cause);
+         Runnable task = () -> entity.setPassenger(passenger);
+         if (!location.getWorld().equals(entity.getWorld())) {
+-            Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(), task, delay);
++            entity.getScheduler().execute(CitizensAPI.getPlugin(), task, null, delay); // Euphyllia
+         } else {
+             task.run();
+         }
+diff --git a/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java b/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java
+new file mode 100644
+index 0000000..93be21c
+--- /dev/null
++++ b/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java
+@@ -0,0 +1,193 @@
++package net.citizensnpcs.api.scheduler;
++
++import io.papermc.paper.threadedregions.scheduler.*;
++import org.bukkit.Bukkit;
++import org.bukkit.Location;
++import org.bukkit.World;
++import org.bukkit.entity.Entity;
++import org.bukkit.plugin.Plugin;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.concurrent.TimeUnit;
++
++public abstract class FoliaRunnable implements Runnable {
++
++    private ScheduledTask task;
++    private @Nullable AsyncScheduler asyncScheduler;
++    private @Nullable TimeUnit timeUnit;
++    private @Nullable EntityScheduler entityScheduler;
++    private @Nullable Runnable entityRetired;
++    private @Nullable GlobalRegionScheduler globalRegionScheduler;
++    private @Nullable RegionScheduler regionScheduler;
++    private @Nullable Location location;
++    private @Nullable World world;
++    private int chunkX;
++    private int chunkZ;
++
++
++    public FoliaRunnable(@NotNull AsyncScheduler scheduler, @Nullable TimeUnit timeUnit) {
++        this.asyncScheduler = scheduler;
++        this.timeUnit = timeUnit;
++    }
++
++    public FoliaRunnable(@NotNull Entity entity, @Nullable Runnable retired) {
++        this.entityScheduler = entity.getScheduler();
++        this.entityRetired = retired;
++    }
++
++    public FoliaRunnable(@NotNull EntityScheduler scheduler, @Nullable Runnable retired) {
++        this.entityScheduler = scheduler;
++        this.entityRetired = retired;
++    }
++
++    public FoliaRunnable(@NotNull GlobalRegionScheduler scheduler) {
++        this.globalRegionScheduler = scheduler;
++    }
++
++    public FoliaRunnable(@Nullable Location location) {
++        this.regionScheduler = Bukkit.getRegionScheduler();
++        this.location = location;
++    }
++
++    public FoliaRunnable(@Nullable World world, int chunkX, int chunkZ) {
++        this.regionScheduler = Bukkit.getRegionScheduler();
++        this.world = world;
++        this.chunkX = chunkX;
++        this.chunkZ = chunkZ;
++    }
++
++    public boolean isCancelled() throws IllegalStateException {
++        checkScheduled();
++
++        return task.isCancelled();
++    }
++
++    public void cancel() throws IllegalStateException {
++        task.cancel();
++    }
++
++    @NotNull
++    public ScheduledTask run(@NotNull Plugin plugin) throws IllegalArgumentException, IllegalStateException {
++        checkNotYetScheduled();
++
++        if (this.globalRegionScheduler != null) {
++            return setupTask(this.globalRegionScheduler.run(plugin, scheduledTask -> this.run()));
++        } else if (this.entityScheduler != null) {
++            return setupTask(this.entityScheduler.run(plugin, scheduledTask -> this.run(), entityRetired));
++        } else if (this.regionScheduler != null) {
++            if (this.location != null) {
++                return setupTask(this.regionScheduler.run(plugin, location, scheduledTask -> this.run()));
++            } else if (world != null) {
++                return setupTask(this.regionScheduler.run(plugin, world, chunkX, chunkZ, scheduledTask -> this.run()));
++            } else {
++                throw new UnsupportedOperationException("The region type is not supported.");
++            }
++        } else if (this.asyncScheduler != null){
++            return setupTask(this.asyncScheduler.runNow(plugin, scheduledTask -> this.run()));
++        } else {
++            throw new UnsupportedOperationException("The task type is not supported.");
++        }
++    }
++
++    /**
++     * Schedules this to run after the specified number of server ticks.
++     *
++     * @param plugin the reference to the plugin scheduling task
++     * @param delay the ticks to wait before running the task
++     * @return a ScheduledTask that contains the id number
++     * @throws IllegalArgumentException if plugin is null
++     * @throws IllegalStateException if this was already scheduled
++     */
++    @NotNull
++    public ScheduledTask runDelayed(@NotNull Plugin plugin, long delay) throws IllegalArgumentException, IllegalStateException {
++        checkNotYetScheduled();
++
++        delay = Math.max(1, delay);
++
++        if (this.globalRegionScheduler != null) {
++            return setupTask(this.globalRegionScheduler.runDelayed(plugin, scheduledTask -> this.run(), delay));
++        } else if (this.entityScheduler != null) {
++            return setupTask(this.entityScheduler.runDelayed(plugin, scheduledTask -> this.run(), entityRetired, delay));
++        } else if (this.regionScheduler != null) {
++            if (this.location != null) {
++                return setupTask(this.regionScheduler.runDelayed(plugin, location, scheduledTask -> this.run(), delay));
++            } else if (world != null) {
++                return setupTask(this.regionScheduler.runDelayed(plugin, world, chunkX, chunkZ, scheduledTask -> this.run(), delay));
++            } else {
++                throw new UnsupportedOperationException("The region type is not supported.");
++            }
++        } else if (this.asyncScheduler != null && this.timeUnit != null) {
++            return setupTask(this.asyncScheduler.runDelayed(plugin, scheduledTask -> this.run(), delay, timeUnit));
++        } else {
++            throw new UnsupportedOperationException("The task type is not supported.");
++        }
++    }
++
++    /**
++     * Schedules this to repeatedly run until cancelled, starting after the
++     * specified number of server ticks.
++     *
++     * @param plugin the reference to the plugin scheduling task
++     * @param delay the ticks to wait before running the task
++     * @param period the ticks to wait between runs
++     * @return a ScheduledTask that contains the id number
++     * @throws IllegalArgumentException if plugin is null
++     * @throws IllegalStateException if this was already scheduled
++     */
++    @NotNull
++    public ScheduledTask runAtFixedRate(@NotNull Plugin plugin, long delay, long period) throws IllegalArgumentException, IllegalStateException {
++        checkNotYetScheduled();
++
++        delay = Math.max(1, delay);
++        period = Math.max(1, period);
++
++        if (this.globalRegionScheduler != null) {
++            return setupTask(this.globalRegionScheduler.runAtFixedRate(plugin, scheduledTask -> this.run(), delay, period));
++        } else if (this.entityScheduler != null) {
++            return setupTask(this.entityScheduler.runAtFixedRate(plugin, scheduledTask -> this.run(), entityRetired, delay, period));
++        } else if (this.regionScheduler != null) {
++            if (this.location != null) {
++                return setupTask(this.regionScheduler.runAtFixedRate(plugin, location, scheduledTask -> this.run(), delay, period));
++            } else if (world != null) {
++                return setupTask(this.regionScheduler.runAtFixedRate(plugin, world, chunkX, chunkZ, scheduledTask -> this.run(), delay, period));
++            } else {
++                throw new UnsupportedOperationException("The region type is not supported.");
++            }
++        } else if (this.asyncScheduler != null && this.timeUnit != null) {
++            return setupTask(this.asyncScheduler.runAtFixedRate(plugin, scheduledTask -> this.run(), delay, period, timeUnit));
++        } else {
++            throw new UnsupportedOperationException("The task type is not supported.");
++        }
++    }
++
++    /**
++     * Gets the task id for this runnable.
++     *
++     * @return the task id that this runnable was scheduled as
++     * @throws IllegalStateException if task was not scheduled yet
++     */
++    public int getTaskId() throws IllegalStateException {
++        checkScheduled();
++
++        return task.hashCode();
++    }
++
++    private void checkScheduled() {
++        if (task == null) {
++            throw new IllegalStateException("Not scheduled yet");
++        }
++    }
++
++    private void checkNotYetScheduled() {
++        if (task != null) {
++            throw new IllegalStateException("Already scheduled as " + task.hashCode());
++        }
++    }
++
++    @NotNull
++    private ScheduledTask setupTask(final ScheduledTask task) {
++        this.task = task;
++        return task;
++    }
++}
+\ No newline at end of file
+-- 
+2.44.0.windows.1
+
