@@ -3,7 +3,7 @@ name: Build Citizens API
 on:
   push:
     branches:
-      - main  # Déclenche l'action sur les push vers la branche main
+      - master # Déclenche l'action sur les push vers la branche main
   pull_request:
     branches:
       - main  # Déclenche l'action pour les pull requests vers la branche main
