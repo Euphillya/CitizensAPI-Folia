@@ -1,0 +1,43 @@
+name: Build Citizens API
+
+on:
+  push:
+    branches:
+      - main  # Déclenche l'action sur les push vers la branche main
+  pull_request:
+    branches:
+      - main  # Déclenche l'action pour les pull requests vers la branche main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # Utilise la dernière version d'Ubuntu disponible sur GitHub Actions
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Permet de récupérer tout l'historique pour les besoins de certains scripts
+
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        java-version: '21'  # Spécifie la version Java à utiliser
+        distribution: 'temurin'  # Utilise la distribution Temurin d'Adoptium
+
+    - name: Grant execute permission to script
+      run: chmod -x script.sh
+
+    - name: Update upstream and apply patches
+      run: |
+        ./script.sh update upstream
+        ./script.sh applyPatches
+
+    - name: Build with Maven
+      run: |
+        cd repo
+        mvn clean compile install
+
+    - name: Upload Jar file
+      uses: actions/upload-artifact@v3
+      with:
+        name: compiled-jar
+        path: repo/target/*.jar  # Ajustez le chemin selon l'endroit où le jar est généré
