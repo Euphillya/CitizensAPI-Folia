@@ -1,7 +1,7 @@
 From d07621210f89a927bcc094c8140c0b389c8ce2f8 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
 Date: Thu, 9 May 2024 22:24:04 +0200
-Subject: [PATCH 2/2] Support Folia
+Subject: [PATCH 2/3] Support Folia
 
 ---
  .../net/citizensnpcs/api/LocationLookup.java  |  16 +-
@@ -366,5 +366,5 @@ index 0000000..93be21c
 +}
 \ No newline at end of file
 -- 
-2.44.0.windows.1
+2.45.1.windows.1
 

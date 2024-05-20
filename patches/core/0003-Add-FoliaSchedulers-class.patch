@@ -1,0 +1,46 @@
+From 9ad45163b5ba6e462d2c2519424bf5d51a9e6105 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Mon, 20 May 2024 22:46:59 +0200
+Subject: [PATCH 3/3] Add FoliaSchedulers class
+
+---
+ .../api/scheduler/FoliaSchedulers.java        | 27 +++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+ create mode 100644 src/main/java/net/citizensnpcs/api/scheduler/FoliaSchedulers.java
+
+diff --git a/src/main/java/net/citizensnpcs/api/scheduler/FoliaSchedulers.java b/src/main/java/net/citizensnpcs/api/scheduler/FoliaSchedulers.java
+new file mode 100644
+index 0000000..2181bcd
+--- /dev/null
++++ b/src/main/java/net/citizensnpcs/api/scheduler/FoliaSchedulers.java
+@@ -0,0 +1,27 @@
++package net.citizensnpcs.api.scheduler;
++
++import io.papermc.paper.threadedregions.scheduler.AsyncScheduler;
++import io.papermc.paper.threadedregions.scheduler.EntityScheduler;
++import io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler;
++import io.papermc.paper.threadedregions.scheduler.RegionScheduler;
++import org.bukkit.Bukkit;
++import org.bukkit.entity.Entity;
++
++public class FoliaSchedulers {
++
++    public static GlobalRegionScheduler getGlobalRegionScheduler() {
++        return Bukkit.getGlobalRegionScheduler();
++    }
++
++    public static RegionScheduler getRegionScheduler() {
++        return Bukkit.getRegionScheduler();
++    }
++
++    public static AsyncScheduler getAsyncScheduler() {
++        return Bukkit.getAsyncScheduler();
++    }
++
++    public static EntityScheduler getEntityScheduler(Entity entity) {
++        return entity.getScheduler();
++    }
++}
+-- 
+2.45.1.windows.1
+
