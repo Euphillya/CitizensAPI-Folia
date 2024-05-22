@@ -1,7 +1,7 @@
 From 9ad45163b5ba6e462d2c2519424bf5d51a9e6105 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
 Date: Mon, 20 May 2024 22:46:59 +0200
-Subject: [PATCH 3/3] Add FoliaSchedulers class
+Subject: [PATCH 3/4] Add FoliaSchedulers class
 
 ---
  .../api/scheduler/FoliaSchedulers.java        | 27 +++++++++++++++++++

@@ -1,0 +1,33 @@
+From 709e4ba213c9d270b365d50f3d4ed2e0e7c7fe94 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Thu, 23 May 2024 00:44:55 +0200
+Subject: [PATCH 4/4] Add cache task FoliaSchedulers Class
+
+---
+ .../java/net/citizensnpcs/api/scheduler/FoliaSchedulers.java | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/src/main/java/net/citizensnpcs/api/scheduler/FoliaSchedulers.java b/src/main/java/net/citizensnpcs/api/scheduler/FoliaSchedulers.java
+index 2181bcd..d7d3af7 100644
+--- a/src/main/java/net/citizensnpcs/api/scheduler/FoliaSchedulers.java
++++ b/src/main/java/net/citizensnpcs/api/scheduler/FoliaSchedulers.java
+@@ -4,11 +4,16 @@ import io.papermc.paper.threadedregions.scheduler.AsyncScheduler;
+ import io.papermc.paper.threadedregions.scheduler.EntityScheduler;
+ import io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler;
+ import io.papermc.paper.threadedregions.scheduler.RegionScheduler;
++import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
+ import org.bukkit.Bukkit;
+ import org.bukkit.entity.Entity;
+ 
++import java.util.concurrent.ConcurrentHashMap;
++
+ public class FoliaSchedulers {
+ 
++    public static ConcurrentHashMap<Integer, ScheduledTask> idScheduleTask = new ConcurrentHashMap<>();
++
+     public static GlobalRegionScheduler getGlobalRegionScheduler() {
+         return Bukkit.getGlobalRegionScheduler();
+     }
+-- 
+2.45.1.windows.1
+
