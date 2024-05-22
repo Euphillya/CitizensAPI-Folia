@@ -1,0 +1,26 @@
+From 02b087a8da4bfc321b4f76455fe59eb04c2205c3 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Thu, 23 May 2024 00:49:45 +0200
+Subject: [PATCH 5/5] Add FoliaRunnable#getScheduledTask
+
+---
+ .../java/net/citizensnpcs/api/scheduler/FoliaRunnable.java    | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java b/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java
+index 93be21c..375c31c 100644
+--- a/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java
++++ b/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java
+@@ -190,4 +190,8 @@ public abstract class FoliaRunnable implements Runnable {
+         this.task = task;
+         return task;
+     }
++
++    public ScheduledTask getScheduledTask() {
++        return this.task;
++    }
+ }
+\ No newline at end of file
+-- 
+2.45.1.windows.1
+

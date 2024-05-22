@@ -1,7 +1,7 @@
 From 709e4ba213c9d270b365d50f3d4ed2e0e7c7fe94 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
 Date: Thu, 23 May 2024 00:44:55 +0200
-Subject: [PATCH 4/4] Add cache task FoliaSchedulers Class
+Subject: [PATCH 4/5] Add cache task FoliaSchedulers Class
 
 ---
  .../java/net/citizensnpcs/api/scheduler/FoliaSchedulers.java | 5 +++++
