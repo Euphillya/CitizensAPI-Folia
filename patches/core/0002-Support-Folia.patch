@@ -1,6 +1,6 @@
-From d07621210f89a927bcc094c8140c0b389c8ce2f8 Mon Sep 17 00:00:00 2001
+From d277cc0dc75d85cc27b660da52814bc0438ee82b Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Thu, 9 May 2024 22:24:04 +0200
+Date: Fri, 31 May 2024 11:45:00 +0200
 Subject: [PATCH 2/5] Support Folia
 
 ---

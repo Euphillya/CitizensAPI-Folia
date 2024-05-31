@@ -1,7 +1,7 @@
-From 02b087a8da4bfc321b4f76455fe59eb04c2205c3 Mon Sep 17 00:00:00 2001
+From 8464ef041f02f7cfc3499d8b98c80273bd2a480e Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Thu, 23 May 2024 00:49:45 +0200
-Subject: [PATCH 5/5] Add FoliaRunnable#getScheduledTask
+Date: Fri, 31 May 2024 11:45:00 +0200
+Subject: [PATCH 5/5] Add FoliaRunnable getScheduledTask
 
 ---
  .../java/net/citizensnpcs/api/scheduler/FoliaRunnable.java    | 4 ++++
