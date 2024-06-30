@@ -2,9 +2,9 @@
 
 # Définition des chemins
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-REPO_DIR="$SCRIPT_DIR/repo"
+REPO_DIR="$SCRIPT_DIR/CitizensAPI"
 REPO_URL="https://github.com/CitizensDev/CitizensAPI"
-PATCHES_DIR="$SCRIPT_DIR/patches/core"
+PATCHES_DIR="$SCRIPT_DIR/patches/api"
 
 # S'assurer que le répertoire des patches existe
 mkdir -p "$PATCHES_DIR"

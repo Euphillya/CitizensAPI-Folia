@@ -1,0 +1,51 @@
+From ab802340d5b0a2586c193061b45ed2d36b29572d Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Sun, 30 Jun 2024 20:00:40 +0200
+Subject: [PATCH 4/4] Add More Support Folia Runnable
+
+---
+ .../citizensnpcs/api/scheduler/FoliaRunnable.java   | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java b/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java
+index ac91992..4abc9a0 100644
+--- a/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java
++++ b/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java
+@@ -10,6 +10,8 @@ import org.bukkit.World;
+ import org.bukkit.plugin.java.JavaPlugin;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
++
++import java.util.concurrent.ConcurrentHashMap;
+ import java.util.concurrent.TimeUnit;
+ 
+ /**
+@@ -31,6 +33,7 @@ public abstract class FoliaRunnable implements Runnable {
+     private World world;
+     private int chunkX;
+     private int chunkZ;
++    private static final ConcurrentHashMap<Long, ScheduledTask> scheduledTaskId = new ConcurrentHashMap<>();
+ 
+     /**
+      * A constructor to build an {@link AsyncScheduler} with a {@link TimeUnit}.
+@@ -266,7 +269,15 @@ public abstract class FoliaRunnable implements Runnable {
+     @NotNull
+     private ScheduledTask setupTask(@NotNull final ScheduledTask task) {
+         this.task = task;
+-
++        scheduledTaskId.put(System.nanoTime(), task);
+         return task;
+     }
++
++    public ScheduledTask getScheduledTask() {
++        return this.task;
++    }
++
++    public ScheduledTask getTaskById(long id) {
++        return scheduledTaskId.getOrDefault(id, null);
++    }
+ }
+\ No newline at end of file
+-- 
+2.45.1.windows.1
+

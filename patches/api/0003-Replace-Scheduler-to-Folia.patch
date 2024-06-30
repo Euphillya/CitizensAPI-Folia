@@ -1,0 +1,142 @@
+From c3856c63f6454138f7276e8cd23c60cef13bb701 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Sun, 30 Jun 2024 20:00:39 +0200
+Subject: [PATCH 3/4] Replace Scheduler to Folia
+
+---
+ .../java/net/citizensnpcs/api/LocationLookup.java     | 11 ++++++-----
+ .../pathfinder/AsyncChunkSnapshotBlockSource.java     |  4 ++--
+ .../api/astar/pathfinder/DoorExaminer.java            |  4 ++--
+ .../java/net/citizensnpcs/api/gui/InventoryMenu.java  |  2 +-
+ .../java/net/citizensnpcs/api/npc/AbstractNPC.java    |  8 ++++----
+ 5 files changed, 15 insertions(+), 14 deletions(-)
+
+diff --git a/src/main/java/net/citizensnpcs/api/LocationLookup.java b/src/main/java/net/citizensnpcs/api/LocationLookup.java
+index 82fa97c..e2bbbbf 100644
+--- a/src/main/java/net/citizensnpcs/api/LocationLookup.java
++++ b/src/main/java/net/citizensnpcs/api/LocationLookup.java
+@@ -31,7 +31,7 @@ import ch.ethz.globis.phtree.PhTreeF;
+ import net.citizensnpcs.api.npc.NPC;
+ import net.citizensnpcs.api.npc.NPCRegistry;
+ 
+-public class LocationLookup extends BukkitRunnable {
++public class LocationLookup extends net.citizensnpcs.api.scheduler.FoliaRunnable {
+     private final Map<String, PerPlayerMetadata<?>> metadata = Maps.newHashMap();
+     private Future<Map<UUID, PhTreeF<NPC>>> npcFuture = null;
+     private Map<UUID, PhTreeF<NPC>> npcWorlds = Maps.newHashMap();
+@@ -44,6 +44,7 @@ public class LocationLookup extends BukkitRunnable {
+     }
+ 
+     public LocationLookup(NPCRegistry sourceRegistry) {
++        super(Bukkit.getGlobalRegionScheduler());
+         this.sourceRegistry = sourceRegistry;
+     }
+ 
+@@ -123,23 +124,23 @@ public class LocationLookup extends BukkitRunnable {
+ 
+     @SuppressWarnings({ "unchecked", "rawtypes" })
+     public void onJoin(PlayerJoinEvent event) {
+-        Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(), () -> {
++        event.getPlayer().getScheduler().run(CitizensAPI.getPlugin(), (task) -> {
+             updateWorld(event.getPlayer().getWorld());
+             for (PerPlayerMetadata meta : metadata.values()) {
+                 if (meta.onJoin != null) {
+                     meta.onJoin.accept(meta, event);
+                 }
+             }
+-        });
++        }, null);
+     }
+ 
+     public void onQuit(PlayerQuitEvent event) {
+-        Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(), () -> {
++        event.getPlayer().getScheduler().run(CitizensAPI.getPlugin(), (task) -> {
+             updateWorld(event.getPlayer().getWorld());
+             for (PerPlayerMetadata<?> meta : metadata.values()) {
+                 meta.sent.remove(event.getPlayer().getUniqueId());
+             }
+-        });
++        }, null);
+     }
+ 
+     public void onWorldUnload(WorldUnloadEvent event) {
+diff --git a/src/main/java/net/citizensnpcs/api/astar/pathfinder/AsyncChunkSnapshotBlockSource.java b/src/main/java/net/citizensnpcs/api/astar/pathfinder/AsyncChunkSnapshotBlockSource.java
+index db5d08c..11558b7 100644
+--- a/src/main/java/net/citizensnpcs/api/astar/pathfinder/AsyncChunkSnapshotBlockSource.java
++++ b/src/main/java/net/citizensnpcs/api/astar/pathfinder/AsyncChunkSnapshotBlockSource.java
+@@ -24,9 +24,9 @@ public class AsyncChunkSnapshotBlockSource extends CachingChunkBlockSource<Chunk
+         // TODO: pre-load multiple chunks on cache miss
+         Callable<ChunkSnapshot> call = () -> world.getChunkAt(x, z).getChunkSnapshot(false, false, false);
+         try {
+-            if (!Bukkit.isPrimaryThread()) {
++            /* (!Bukkit.isPrimaryThread()) {
+                 return Bukkit.getScheduler().callSyncMethod(null, call).get();
+-            } else
++            } else*/
+                 return call.call();
+         } catch (Exception e) {
+             e.printStackTrace();
+diff --git a/src/main/java/net/citizensnpcs/api/astar/pathfinder/DoorExaminer.java b/src/main/java/net/citizensnpcs/api/astar/pathfinder/DoorExaminer.java
+index 0fa3b53..8a5dde6 100644
+--- a/src/main/java/net/citizensnpcs/api/astar/pathfinder/DoorExaminer.java
++++ b/src/main/java/net/citizensnpcs/api/astar/pathfinder/DoorExaminer.java
+@@ -86,7 +86,7 @@ public class DoorExaminer implements BlockExaminer {
+         @Override
+         public void onReached(NPC npc, Block point) {
+             Location doorCentre = point.getLocation().add(0.5, 0, 0.5);
+-            new BukkitRunnable() {
++            new net.citizensnpcs.api.scheduler.FoliaRunnable(npc.getEntity().getScheduler(), null) {
+                 @Override
+                 public void run() {
+                     if (!npc.getNavigator().isNavigating()) {
+@@ -101,7 +101,7 @@ public class DoorExaminer implements BlockExaminer {
+                         cancel();
+                     }
+                 }
+-            }.runTaskTimer(CitizensAPI.getPlugin(), 3, 1);
++            }.runAtFixedRate((org.bukkit.plugin.java.JavaPlugin) CitizensAPI.getPlugin(), 3, 1);
+         }
+ 
+         private void open(NPC npc, Block point) {
+diff --git a/src/main/java/net/citizensnpcs/api/gui/InventoryMenu.java b/src/main/java/net/citizensnpcs/api/gui/InventoryMenu.java
+index 3b01837..7b80031 100644
+--- a/src/main/java/net/citizensnpcs/api/gui/InventoryMenu.java
++++ b/src/main/java/net/citizensnpcs/api/gui/InventoryMenu.java
+@@ -439,7 +439,7 @@ public class InventoryMenu implements Listener, Runnable {
+ 
+     private void runViewerModifier(Runnable run) {
+         if (delayViewerChanges) {
+-            Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(), run);
++            Bukkit.getGlobalRegionScheduler().execute(CitizensAPI.getPlugin(), run); // Euphyllia
+         } else {
+             run.run();
+         }
+diff --git a/src/main/java/net/citizensnpcs/api/npc/AbstractNPC.java b/src/main/java/net/citizensnpcs/api/npc/AbstractNPC.java
+index be05dad..06f7e55 100644
+--- a/src/main/java/net/citizensnpcs/api/npc/AbstractNPC.java
++++ b/src/main/java/net/citizensnpcs/api/npc/AbstractNPC.java
+@@ -491,17 +491,17 @@ public abstract class AbstractNPC implements NPC {
+         final Entity passenger = entity.getPassenger();
+         entity.eject();
+         if (!location.getWorld().equals(entity.getWorld())) {
+-            Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(),
+-                    () -> entity.teleport(location, cause), delay++);
++            entity.getScheduler().runDelayed(CitizensAPI.getPlugin(),
++                    (task) -> entity.teleportAsync(location, cause), null, delay++);
+         } else {
+-            entity.teleport(location, cause);
++            entity.teleportAsync(location, cause);
+         }
+         if (passenger == null)
+             return;
+         teleport(passenger, location, delay++, cause);
+         Runnable task = () -> entity.setPassenger(passenger);
+         if (!location.getWorld().equals(entity.getWorld())) {
+-            Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(), task, delay);
++            entity.getScheduler().runDelayed(CitizensAPI.getPlugin(), task1 -> task.run(), null, delay);
+         } else {
+             task.run();
+         }
+-- 
+2.45.1.windows.1
+
