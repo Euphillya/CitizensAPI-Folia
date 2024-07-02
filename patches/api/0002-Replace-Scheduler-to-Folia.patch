@@ -1,6 +1,6 @@
-From 2775cae7b66dde67584f2ee2e07dc81ef6047b1e Mon Sep 17 00:00:00 2001
+From 687b68d9de8ea2f3d6179a83cf6a1be54a86f8cd Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Tue, 2 Jul 2024 12:11:35 +0200
+Date: Tue, 2 Jul 2024 22:25:40 +0200
 Subject: [PATCH 2/3] Replace Scheduler to Folia
 
 ---
@@ -112,7 +112,7 @@ index 3b01837..7b80031 100644
              run.run();
          }
 diff --git a/src/main/java/net/citizensnpcs/api/npc/AbstractNPC.java b/src/main/java/net/citizensnpcs/api/npc/AbstractNPC.java
-index be05dad..06f7e55 100644
+index 0000d5f..46ba420 100644
 --- a/src/main/java/net/citizensnpcs/api/npc/AbstractNPC.java
 +++ b/src/main/java/net/citizensnpcs/api/npc/AbstractNPC.java
 @@ -491,17 +491,17 @@ public abstract class AbstractNPC implements NPC {

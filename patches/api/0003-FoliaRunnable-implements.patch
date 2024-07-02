@@ -1,19 +1,19 @@
-From 1262939310234cc7fb115dd618700f22696c205e Mon Sep 17 00:00:00 2001
+From 6415d520a4a8d73e060376b76b766d9e9319c5fa Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Tue, 2 Jul 2024 12:11:36 +0200
+Date: Tue, 2 Jul 2024 22:25:40 +0200
 Subject: [PATCH 3/3] FoliaRunnable implements
 
 ---
- .../api/scheduler/FoliaRunnable.java          | 284 ++++++++++++++++++
- 1 file changed, 284 insertions(+)
+ .../api/scheduler/FoliaRunnable.java          | 296 ++++++++++++++++++
+ 1 file changed, 296 insertions(+)
  create mode 100644 src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java
 
 diff --git a/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java b/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java
 new file mode 100644
-index 0000000..b564b77
+index 0000000..7f23304
 --- /dev/null
 +++ b/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java
-@@ -0,0 +1,284 @@
+@@ -0,0 +1,296 @@
 +package net.citizensnpcs.api.scheduler;
 +
 +import io.papermc.paper.threadedregions.scheduler.AsyncScheduler;
@@ -23,6 +23,7 @@ index 0000000..b564b77
 +import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 +import org.bukkit.Location;
 +import org.bukkit.World;
++import org.bukkit.entity.Entity;
 +import org.bukkit.plugin.java.JavaPlugin;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
@@ -61,6 +62,17 @@ index 0000000..b564b77
 +    public FoliaRunnable(@NotNull final AsyncScheduler scheduler, @Nullable final TimeUnit timeUnit) {
 +        this.asyncScheduler = scheduler;
 +        this.timeUnit = timeUnit;
++    }
++
++    /**
++     * A constructor to build an entity scheduler.
++     *
++     * @param entity the {@link Entity}
++     * @param retired the {@link Runnable}
++     * @since 1.8
++     */
++    public FoliaRunnable(@NotNull final Entity entity, @Nullable final Runnable retired) {
++        this(entity.getScheduler(), retired);
 +    }
 +
 +    /**
