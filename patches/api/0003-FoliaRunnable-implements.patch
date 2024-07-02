@@ -273,7 +273,7 @@ index 0000000..b564b77
 +     * @since 1.0
 +     */
 +    private void checkNotYetScheduled() {
-+        if (this.task != null) throw new IllegalStateException("Already scheduled as " + task.getTaskId());
++        if (this.task != null) throw new IllegalStateException("Already scheduled as " + getTaskId());
 +    }
 +
 +    /**
