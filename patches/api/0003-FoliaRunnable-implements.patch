@@ -1,19 +1,19 @@
-From a41e81b95188bec4fb8d8c2d33d93841c6dd372a Mon Sep 17 00:00:00 2001
+From 1262939310234cc7fb115dd618700f22696c205e Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Sun, 30 Jun 2024 20:00:39 +0200
-Subject: [PATCH 2/4] Add Folia Runnable
+Date: Tue, 2 Jul 2024 12:11:36 +0200
+Subject: [PATCH 3/3] FoliaRunnable implements
 
 ---
- .../api/scheduler/FoliaRunnable.java          | 272 ++++++++++++++++++
- 1 file changed, 272 insertions(+)
+ .../api/scheduler/FoliaRunnable.java          | 284 ++++++++++++++++++
+ 1 file changed, 284 insertions(+)
  create mode 100644 src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java
 
 diff --git a/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java b/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java
 new file mode 100644
-index 0000000..ac91992
+index 0000000..b564b77
 --- /dev/null
 +++ b/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java
-@@ -0,0 +1,272 @@
+@@ -0,0 +1,284 @@
 +package net.citizensnpcs.api.scheduler;
 +
 +import io.papermc.paper.threadedregions.scheduler.AsyncScheduler;
@@ -27,6 +27,7 @@ index 0000000..ac91992
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +import java.util.concurrent.TimeUnit;
++import java.util.concurrent.ConcurrentHashMap;
 +
 +/**
 + * A runnable class with both Paper and Folia Support.
@@ -47,6 +48,8 @@ index 0000000..ac91992
 +    private World world;
 +    private int chunkX;
 +    private int chunkZ;
++    private long taskId;
++    private static final ConcurrentHashMap<Long, ScheduledTask> scheduledTaskId = new ConcurrentHashMap<>();
 +
 +    /**
 +     * A constructor to build an {@link AsyncScheduler} with a {@link TimeUnit}.
@@ -143,6 +146,7 @@ index 0000000..ac91992
 +     */
 +    public final boolean execute(@NotNull final JavaPlugin plugin) throws IllegalArgumentException, IllegalStateException {
 +        checkNotYetScheduled();
++        taskId = System.nanoTime();
 +        if (this.globalRegionScheduler != null) {
 +            this.globalRegionScheduler.execute(plugin, this);
 +        } else if (this.entityScheduler != null) {
@@ -168,7 +172,7 @@ index 0000000..ac91992
 +     */
 +    public @NotNull final ScheduledTask run(@NotNull final JavaPlugin plugin) throws IllegalArgumentException, IllegalStateException {
 +        checkNotYetScheduled();
-+
++        taskId = System.nanoTime();
 +        if (this.globalRegionScheduler != null) {
 +            return setupTask(this.globalRegionScheduler.run(plugin, scheduledTask -> this.run()));
 +        } else if (this.entityScheduler != null) {
@@ -194,7 +198,7 @@ index 0000000..ac91992
 +     */
 +    public @NotNull final ScheduledTask runDelayed(@NotNull final JavaPlugin plugin, long delay) throws IllegalArgumentException, IllegalStateException {
 +        checkNotYetScheduled();
-+
++        taskId = System.nanoTime();
 +        delay = Math.max(1, delay);
 +
 +        if (this.globalRegionScheduler != null) {
@@ -224,7 +228,7 @@ index 0000000..ac91992
 +     */
 +    public @NotNull final ScheduledTask runAtFixedRate(@NotNull final JavaPlugin plugin, long delay, long period) throws IllegalArgumentException, IllegalStateException {
 +        checkNotYetScheduled();
-+
++        taskId = System.nanoTime();
 +        delay = Math.max(1, delay);
 +        period = Math.max(1, period);
 +
@@ -248,10 +252,10 @@ index 0000000..ac91992
 +     * @throws IllegalStateException if task was not scheduled yet
 +     * @since 1.0
 +     */
-+    public final int getTaskId() throws IllegalStateException {
++    public final long getTaskId() throws IllegalStateException {
 +        checkScheduled();
 +
-+        return this.task.hashCode();
++        return this.taskId;
 +    }
 +
 +    /**
@@ -269,7 +273,7 @@ index 0000000..ac91992
 +     * @since 1.0
 +     */
 +    private void checkNotYetScheduled() {
-+        if (this.task != null) throw new IllegalStateException("Already scheduled as " + task.hashCode());
++        if (this.task != null) throw new IllegalStateException("Already scheduled as " + task.getTaskId());
 +    }
 +
 +    /**
@@ -282,8 +286,16 @@ index 0000000..ac91992
 +    @NotNull
 +    private ScheduledTask setupTask(@NotNull final ScheduledTask task) {
 +        this.task = task;
-+
++        scheduledTaskId.put(getTaskId(), task);
 +        return task;
++    }
++
++    public ScheduledTask getScheduledTask() {
++        return this.task;
++    }
++
++    public static ScheduledTask getTaskById(long id) {
++        return scheduledTaskId.getOrDefault(id, null);
 +    }
 +}
 \ No newline at end of file
