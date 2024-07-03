@@ -1,6 +1,6 @@
-From 687b68d9de8ea2f3d6179a83cf6a1be54a86f8cd Mon Sep 17 00:00:00 2001
+From da4c27a6b0bddf3d722ae244a2d92a9d5c9adb38 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Tue, 2 Jul 2024 22:25:40 +0200
+Date: Wed, 3 Jul 2024 11:38:45 +0200
 Subject: [PATCH 2/3] Replace Scheduler to Folia
 
 ---

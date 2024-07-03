@@ -1,19 +1,19 @@
-From 6415d520a4a8d73e060376b76b766d9e9319c5fa Mon Sep 17 00:00:00 2001
+From ab63281696c61db4d5c31b6d0edf4a236ad5c165 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Tue, 2 Jul 2024 22:25:40 +0200
+Date: Wed, 3 Jul 2024 11:38:45 +0200
 Subject: [PATCH 3/3] FoliaRunnable implements
 
 ---
- .../api/scheduler/FoliaRunnable.java          | 296 ++++++++++++++++++
- 1 file changed, 296 insertions(+)
+ .../api/scheduler/FoliaRunnable.java          | 322 ++++++++++++++++++
+ 1 file changed, 322 insertions(+)
  create mode 100644 src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java
 
 diff --git a/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java b/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java
 new file mode 100644
-index 0000000..7f23304
+index 0000000..90fd79c
 --- /dev/null
 +++ b/src/main/java/net/citizensnpcs/api/scheduler/FoliaRunnable.java
-@@ -0,0 +1,296 @@
+@@ -0,0 +1,322 @@
 +package net.citizensnpcs.api.scheduler;
 +
 +import io.papermc.paper.threadedregions.scheduler.AsyncScheduler;
@@ -21,6 +21,7 @@ index 0000000..7f23304
 +import io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler;
 +import io.papermc.paper.threadedregions.scheduler.RegionScheduler;
 +import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
++import org.bukkit.Bukkit;
 +import org.bukkit.Location;
 +import org.bukkit.World;
 +import org.bukkit.entity.Entity;
@@ -109,6 +110,16 @@ index 0000000..7f23304
 +    }
 +
 +    /**
++     * A constructor that builds a {@link Runnable} for the {@link Location}'s region.
++     *
++     * @param location the {@link Location}
++     * @since 1.8
++     */
++    public FoliaRunnable(@NotNull final Location location) {
++        this(Bukkit.getRegionScheduler(), location.getWorld(), location.getBlockX() >> 4, location.getBlockZ() >> 4);
++    }
++
++    /**
 +     * A constructor that builds a {@link Runnable} for the world region.
 +     *
 +     * @param scheduler the {@link RegionScheduler} for the world
@@ -119,6 +130,21 @@ index 0000000..7f23304
 +     */
 +    public FoliaRunnable(@NotNull final RegionScheduler scheduler, @NotNull final World world, final int chunkX, final int chunkZ) {
 +        this.regionScheduler = scheduler;
++        this.world = world;
++        this.chunkX = chunkX;
++        this.chunkZ = chunkZ;
++    }
++
++    /**
++     * A constructor that builds a {@link Runnable} for the world region.
++     *
++     * @param world the {@link World}
++     * @param chunkX the chunk's {@link Integer}
++     * @param chunkZ the chunk's {@link Integer}
++     * @since 1.0
++     */
++    public FoliaRunnable(@NotNull final World world, final int chunkX, final int chunkZ) {
++        this.regionScheduler = Bukkit.getRegionScheduler();
 +        this.world = world;
 +        this.chunkX = chunkX;
 +        this.chunkZ = chunkZ;
